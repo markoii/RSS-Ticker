@@ -20,3 +20,11 @@ pref( "extensions.rssticker.subscribeIconCheck", true );
 
 pref( "extensions.rssticker.randomizeItems", false );
 pref( "extensions.rssticker.dw.limitWidth", false );
+
+pref( "extensions.rssticker.unvisitedColor", "#0000FF" );
+pref( "extensions.rssticker.visitedColor", "#000000" );
+pref( "extensions.rssticker.unvisitedBold", true );
+pref( "extensions.rssticker.visitedBold", false );
+pref( "extensions.rssticker.hideVisited", true );
+pref( "extensions.rssticker.maxHours", 48 );
+pref( "extensions.rssticker.maxItems", 10 );

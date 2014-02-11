@@ -35,11 +35,11 @@ var RSS_TICKER_UI = {
 		setTimeout( function acceptableDelayedStartup() {
 			RSS_TICKER_UI.loadTicker();
 			
-			if ( ! RSS_TICKER_UTILS.prefs.getBoolPref( "subscribeIconCheck" ) ) {
-				RSS_TICKER_UTILS.prefs.setBoolPref( "subscribeIconCheck", true );
+				if ( ! RSS_TICKER_UTILS.prefs.getBoolPref( "subscribeIconCheck" ) ) {
+					RSS_TICKER_UTILS.prefs.setBoolPref( "subscribeIconCheck", true );
 
-				RSS_TICKER_UI.addToolbarButton( "feed-button" );
-			}
+					RSS_TICKER_UI.addToolbarButton( "feed-button" );
+				}
 			
 			RSS_TICKER_UI.showFirstRun();
 		}, 3000 );
@@ -93,6 +93,11 @@ var RSS_TICKER_UI = {
 		RSS_TICKER_UI.observe( null, "nsPref:changed", "ticksPerItem" );
 		RSS_TICKER_UI.observe( null, "nsPref:changed", "rtl" );
 		RSS_TICKER_UI.observe( null, "nsPref:changed", "dw.limitWidth" );
+		RSS_TICKER_UI.observe( null, "nsPref:changed", "unvisitedColor" );
+		RSS_TICKER_UI.observe( null, "nsPref:changed", "visitedColor" );
+		RSS_TICKER_UI.observe( null, "nsPref:changed", "unvisitedBold" );
+		RSS_TICKER_UI.observe( null, "nsPref:changed", "visitedBold" );
+		RSS_TICKER_UI.observe( null, "nsPref:changed", "maxItems" );
 		
 		this.tick();
 		
@@ -419,7 +424,7 @@ var RSS_TICKER_UI = {
 	observe : function ( subject, topic, data ) {
 		if ( topic != "nsPref:changed" )
 			return;
-		
+
 		switch ( data ) {
 			case 'tickSpeed':
 				if ( RSS_TICKER_UTILS.prefs.getIntPref( 'tickSpeed' ) < 1 ) {
@@ -491,9 +496,57 @@ var RSS_TICKER_UI = {
 			break;
 			case 'dw.limitWidth':
 				if ( RSS_TICKER_UTILS.prefs.getBoolPref( 'dw.limitWidth' ) )
-					RSS_TICKER_UI.toolbar.setAttribute( 'class', RSS_TICKER_UI.toolbar.getAttribute( 'class' ) + ' condensed' );
+					RSS_TICKER_UI.toolbar.setAttribute( 'class', RSS_TICKER_UI.toolbar.getAttribute( 'class' ) + '-condensed' );
 				else
-					RSS_TICKER_UI.toolbar.setAttribute( 'class', RSS_TICKER_UI.toolbar.getAttribute( 'class' ).replace( /\bcondensed\b/, '' ) );
+					RSS_TICKER_UI.toolbar.setAttribute( 'class', RSS_TICKER_UI.toolbar.getAttribute( 'class' ).replace( /\b-condensed\b/, '' ) );
+			break;
+			case 'unvisitedColor':
+			case 'visitedColor':
+			case 'unvisitedBold':
+			case 'visitedBold':
+				for ( var i = RSS_TICKER_UI.ticker.childNodes.length - 1; i >= 0; i-- ) {
+					var element = RSS_TICKER_UI.ticker.childNodes[i];
+					var feed = RSS_TICKER_FEED_MANAGER.feeds[element.feedGUID];
+					for ( var item in feed.items ) {
+						if ( feed.items[item].guid == element.guid ) {
+							if ( feed.items[item].visited ) {
+								element.style.color = RSS_TICKER_UTILS.prefs.getCharPref( 'visitedColor' );
+								element.style.fontWeight = ( RSS_TICKER_UTILS.prefs.getBoolPref( 'visitedBold' ) ) ? 'bold' : 'normal';
+							} else {
+								element.style.color = RSS_TICKER_UTILS.prefs.getCharPref( 'unvisitedColor' );
+								element.style.fontWeight = ( RSS_TICKER_UTILS.prefs.getBoolPref( 'unvisitedBold' ) ) ? 'bold' : 'normal';
+							}
+						}
+					}
+				}
+			break;
+			case 'maxItems':
+				// Unshuffle the ticker items.
+				var feeds = RSS_TICKER_FEED_MANAGER.getAllFeeds();
+					
+				// Remove all items
+				while ( RSS_TICKER_UI.ticker.lastChild )
+					RSS_TICKER_UI.ticker.removeChild( RSS_TICKER_UI.ticker.lastChild );
+					
+				// Reinstate all items.
+				for ( var i = 0, _len = feeds.length; i < _len; i++ )
+					RSS_TICKER_UI.feedParsed( feeds[i] );
+
+				if ( RSS_TICKER_UTILS.prefs.getBoolPref( 'randomizeItems' ) ) {
+					// Shuffle all of the ticker items.
+					var itemCount = RSS_TICKER_UI.ticker.childNodes.length;
+					
+					// Move the first half of items into the second half.
+					for ( var i = 0; i < itemCount / 2; i++ ) {
+						// Remove the first item.
+						var element = RSS_TICKER_UI.ticker.childNodes[0];
+						RSS_TICKER_UI.ticker.removeChild( element );
+						
+						// Find it a new location somewhere amongst the second half of items.
+						var newLocation = Math.floor( ( Math.random() * ( itemCount / 2 ) ) + ( itemCount / 2 ) );
+						RSS_TICKER_UI.ticker.insertBefore( element, RSS_TICKER_UI.ticker.childNodes[newLocation - 1] );
+					}
+				}
 			break;
 		}
 	},
@@ -514,13 +567,23 @@ var RSS_TICKER_UI = {
 	},
 	
 	itemVisited : function ( url, guid ) {
-		if ( document.getElementById( 'rss-ticker-item-' + guid ) ) {
-			document.getElementById( 'rss-ticker-item-container' ).removeChild( document.getElementById( 'rss-ticker-item-' + guid ) );
-			
+		var element = document.getElementById( 'rss-ticker-item-' + guid );
+		if ( element ) {
+
+			element.style.color = RSS_TICKER_UTILS.prefs.getCharPref( 'visitedColor' );
+			element.style.fontWeight = ( RSS_TICKER_UTILS.prefs.getBoolPref( 'visitedBold' ) ) ? 'bold' : 'normal';
+
+			var feed = RSS_TICKER_FEED_MANAGER.feeds[element.feedGUID];
+			for (var i = 0; i < feed.items.length; i++)
+				if ( feed.items[i].guid == element.guid ) {
+					RSS_TICKER_UTILS.log ( element.guid + " was visited" );
+					RSS_TICKER_FEED_MANAGER.feeds[element.feedGUID].items[i].visited = true;
+				}
+
 			this.maybeHideTicker();
 		}
 	},
-	
+
 	removeFeed : function ( feedGUID ) {
 		for ( var i = RSS_TICKER_UI.ticker.childNodes.length - 1; i >= 0; i-- ) {
 			var element = RSS_TICKER_UI.ticker.childNodes[i];
@@ -538,20 +601,57 @@ var RSS_TICKER_UI = {
 	},
 	
 	/* End interface */
+
+	getLabelTime : function ( time ) {
+		var d = new Date( time );
+		var dnumber = Number( d ) - d.getTimezoneOffset() * 3600000;
+		var dnow = Date.now() - d.getTimezoneOffset() * 3600000;
+		var dformat = "(";
+		if ( dnow - dnow % 86400000 == dnumber - dnumber % 86400000 )
+			dformat = dformat + "Hoy ";
+		else if ( dnow - dnow % 86400000 == dnumber - dnumber % 86400000 + 86400000 )
+			dformat = dformat + "Ayer ";
+		else {
+			dformat = dformat + ( d.getDate() < 10 ? "0" : "" ) + d.getDate() + "/";
+			dformat = dformat + ( Number( d.getMonth() ) + 1 < 10 ? "0" : "" ) + ( Number( d.getMonth() ) + 1 ) + " ";
+		}
+		dformat = dformat + ( d.getHours() < 10 ? "0" : "" ) + d.getHours() + ":"; 
+		dformat = dformat + ( d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() + ") ";
+		return dformat;
+	},
 	
 	writeFeed : function ( feed ) {
 		var feedItems = feed.items;
 
-		for ( var i = 0, _len = feedItems.length; i < _len; i++ ) {
+		var maxItemsByFeed = RSS_TICKER_UTILS.prefs.getIntPref( 'maxItems' );
+		if ( maxItemsByFeed == 0 )
+			maxItemsByFeed = feedItems.length;
+		
+		for ( var i = 0, _len = maxItemsByFeed; i < _len; i++ ) {
 			var item = feedItems[i];
-			
+					
 			if ( document.getElementById( 'rss-ticker-item-' + item.guid ) )
 				continue;
-			
+		
+			// Only show items within n hours
+			var maxHours = RSS_TICKER_UTILS.prefs.getIntPref( 'maxHours' );
+			if ( !isNaN( Date.parse ( item.time ) ) ) 
+				if ( Date.now() - Date.parse( item.time ) > maxHours * 3600000 )
+					continue;
+				
 			if ( item.visited )
-				continue;
-			
-			var element = document.createElement( 'toolbarbutton' );
+				if ( RSS_TICKER_UTILS.prefs.getBoolPref( 'hideVisited' ) )
+					continue;
+				else {
+					var element = document.createElement( 'toolbarbutton' );
+					element.style.color = RSS_TICKER_UTILS.prefs.getCharPref( 'visitedColor' );
+					element.style.fontWeight = ( RSS_TICKER_UTILS.prefs.getBoolPref( 'visitedBold' ) ) ? 'bold' : 'normal';
+				}
+			else {
+				var element = document.createElement( 'toolbarbutton' );
+				element.style.color = RSS_TICKER_UTILS.prefs.getCharPref( 'unvisitedColor' );
+				element.style.fontWeight = ( RSS_TICKER_UTILS.prefs.getBoolPref( 'unvisitedBold' ) ) ? 'bold' : 'normal';
+			}			
 			element.id = 'rss-ticker-item-' + item.guid;
 			element.guid = item.guid;
 			element.url = item.url;
@@ -560,10 +660,10 @@ var RSS_TICKER_UI = {
 			element.itemData = item;
 			element.feedData = feed;
 			
-			element.setAttribute( 'label', item.label );
+			element.setAttribute( 'label', this.getLabelTime( item.time ) + item.label );
 			element.setAttribute( 'image', item.image );
 			element.setAttribute( 'tooltip', 'rss-ticker-tooltip' );
-
+					
 			if ( ! RSS_TICKER_UTILS.prefs.getBoolPref( 'randomizeItems' ) )
 				RSS_TICKER_UI.ticker.appendChild( element );
 			else {

@@ -40,7 +40,16 @@
 <!ENTITY rssticker.options.tickerPlacement "Ticker Placement">
 <!ENTITY rssticker.tickerPlacement.belowStatusBar "Below status bar">
 <!ENTITY rssticker.tickerPlacement.belowBMTB "Below bookmarks toolbar">
-<!ENTITY rssticker.showInTicker "Show in RSS Ticker">
-<!ENTITY rssticker.showInTicker.key "T">
-<!ENTITY rssticker.options.random "Randomize ticker items">
+<!ENTITY rssticker.options.unvisitedColor "Unvisited items color"> 
+<!ENTITY rssticker.options.unvisitedColor.description "The color for items which hasn't been read."> 
+<!ENTITY rssticker.options.visitedColor "Visited items color"> 
+<!ENTITY rssticker.options.visitedColor.description "The color for items already read.">
+<!ENTITY rssticker.options.unvisitedBold "Unvisited items in bold"> 
+<!ENTITY rssticker.options.visitedBold "Visited items in bold"> 
+<!ENTITY rssticker.options.hideVisited "Hide visited items"> 
+<!ENTITY rssticker.options.hideVisited.description "This options will not be changed until you reopen your browser window.">
+<!ENTITY rssticker.options.random "Randomize ticker items"> 
 <!ENTITY rssticker.options.limitWidth "Limit the width of ticker items">
+<!ENTITY rssticker.options.maxHours "Hide items older than (in hours)">
+<!ENTITY rssticker.options.maxHours.description "This options will not be changed until you reopen your browser window.">
+<!ENTITY rssticker.options.maxItems "Number of items from each feed">
