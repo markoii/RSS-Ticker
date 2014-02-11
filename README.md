@@ -9,4 +9,4 @@ This branch contains a version of RSS-Ticker with all requests to the original b
     Changing the item width doesn't reflect in the toolbar
     Fix the "no feeds found" page when Firefox closes unexpectedly
 
-Download this file and install it: https://github.com/jajlin/RSS-Ticker/raw/fork/jajlin-version/RSS-Ticker_fork.xpi
+Download this file and install it: https://github.com/jajlin/RSS-Ticker/raw/fork/mod-version/RSS-Ticker_fork.xpi
